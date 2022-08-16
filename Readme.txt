@@ -1,0 +1,1 @@
+sudo chown -R laravel:www-data storage bootstrap/cache

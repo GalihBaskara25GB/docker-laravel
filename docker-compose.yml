@@ -1,0 +1,90 @@
+version: '3'
+
+networks:
+  laravel:
+
+services:
+  site:
+    build:
+      context: ./
+      dockerfile: dockerfiles/nginx/Dockerfile
+      args:
+        - UID=${UID:-1000}
+        - GID=${GID:-1000}
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - 80:80
+    volumes:
+      - ./src:/var/www/html:delegated
+    depends_on:
+      - php-74
+      - php-8
+      - redis
+      - mysql
+      - mailhog
+    networks:
+      - laravel
+
+  mysql:
+    image: mariadb:10.6
+    container_name: mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_USER: dev
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    networks:
+      - laravel
+
+  php-74:
+    build:
+      context: ./dockerfiles
+      dockerfile: php/php-74/Dockerfile
+      args:
+        - UID=${UID:-1000}
+        - GID=${GID:-1000}
+    container_name: php-74
+    restart: unless-stopped
+    volumes:
+      - ./src:/var/www/html:delegated
+    networks:
+      - laravel
+
+  php-8:
+    build:
+      context: ./dockerfiles
+      dockerfile: php/php-80/Dockerfile
+      args:
+        - UID=${UID:-1000}
+        - GID=${GID:-1000}
+    container_name: php-8
+    restart: unless-stopped
+    volumes:
+      - ./src:/var/www/html:delegated
+    networks:
+      - laravel
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    networks:
+      - laravel
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    restart: unless-stopped
+    ports:
+      - 1025:1025
+      - 8025:8025
+    networks:
+      - laravel
